@@ -1,0 +1,26 @@
+{% extends 'account/base.html' %}
+<!--  -->
+{% load crispy_forms_tags %}
+<!--  -->
+{% block content %}
+<!--  -->
+{% if form %}
+<!--  -->
+{% if user_preference_form %}
+<form action="" method="post" class="row">
+  {% csrf_token %}
+  <!--  -->
+  <div class="col-12">{{ permission_form|crispy }}</div>
+  <!--  -->
+  <div class="col-6">{{ form|crispy }}</div>
+  <!--  -->
+  <div class="col-6">{{ user_preference_form|crispy }}</div>
+  <!--  -->
+  <button class="btn btn-primary" type="submit">Submit</button>
+</form>
+
+{% endif %}
+<!--  -->
+{% endif %}
+<!--  -->
+{% endblock %}

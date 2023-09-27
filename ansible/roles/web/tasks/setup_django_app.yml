@@ -1,0 +1,78 @@
+---
+- name: Ensure manage.py file is executable
+  file: dest="{{ backend_project_path }}/manage.py"
+    mode=a+x
+
+- name: Create static directory if it does not exist
+  ansible.builtin.file:
+    path: "{{ backend_project_path }}/staticfiles"
+    state: directory
+    mode: "0755"
+    owner: "{{ ansible_user }}"
+    group: "www-data"
+
+- name: Create media directory if it does not exist
+  ansible.builtin.file:
+    path: "{{ backend_project_path }}/{{ backend_project_name }}/media"
+    state: directory
+    mode: "0755"
+    owner: "{{ ansible_user }}"
+    group: "www-data"
+
+- name: Install packages required by the Django app inside virtualenv
+  become: false
+  pip:
+    virtualenv: "{{ virtualenv_path }}"
+    requirements: "{{ requirements_file }}"
+    extra_args: "{{ pip_use_upgrade_flag | ternary('--upgrade', omit) }}"
+
+- name: Write .env file for the Backend
+  become: false
+  template:
+    src: env.j2
+    dest: "{{ backend_project_path }}/.env"
+
+- name: Run the Django syncdb command
+  community.general.django_manage:
+    command: syncdb
+    project_path: "{{ backend_project_path }}"
+    virtualenv: "{{ virtualenv_path }}"
+    settings: "{{ django_settings_file }}"
+  environment: "{{ django_environment }}"
+  when: run_django_syncdb is defined and run_django_syncdb
+  tags: django.syncdb
+
+- name: Run Django database migrations
+  become: false
+  community.general.django_manage:
+    command: migrate
+    project_path: "{{ backend_project_path }}"
+    virtualenv: "{{ virtualenv_path }}"
+    settings: "{{ django_settings_file }}"
+  environment: "{{ django_environment }}"
+  when: run_django_db_migrations is defined and run_django_db_migrations
+  tags: django.migrate
+
+- name: Run Django collectstatic
+  become: false
+  community.general.django_manage:
+    command: collectstatic
+    project_path: "{{ backend_project_path }}"
+    virtualenv: "{{ virtualenv_path }}"
+    settings: "{{ django_settings_file }}"
+  environment: "{{ django_environment }}"
+  when: run_django_collectstatic is defined and run_django_collectstatic
+  notify: restart application
+  tags: django.collectstatic
+
+- name: Create an initial superuser
+  become: false
+  community.general.django_manage:
+    command: "createsuperuser --noinput --email={{ django_email }}"
+    project_path: "{{ backend_project_path }}"
+    virtualenv: "{{ virtualenv_path }}"
+    settings: "{{ django_settings_file }}"
+  environment: "{{ django_environment }}"
+  when: run_django_user is defined and run_django_user
+  tags: django.user
+

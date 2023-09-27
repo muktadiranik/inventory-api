@@ -1,0 +1,52 @@
+---
+- name: Ensure NGINX is in the latest version
+  apt: update_cache=yes
+      force_apt_get=yes
+      pkg=nginx
+      state=latest
+
+- name: UFW - Allow NGINX
+  community.general.ufw:
+      rule: allow
+      name: "Nginx Full"
+      state: reloaded
+
+- name: Write NGINX configuration
+  template:
+      src: templates/nginx.conf
+      dest: /etc/nginx/nginx.conf
+  become: true
+  notify:
+      - reload nginx
+  tags:
+      - common
+
+- name: Write HTTPS NGINX config for the Frontend
+  template:
+      src: templates/frontend-ssl.conf.j2
+      dest: /etc/nginx/conf.d/{{ frontend_server_name }}.ssl-nginx.conf
+  become: true
+  notify:
+      - reload nginx
+  when: deploy_frontend
+
+- name: Write HTTPS NGINX config for the Backend
+  template:
+      src: templates/backend-ssl.conf.j2
+      dest: /etc/nginx/conf.d/{{ backend_server_name }}.ssl-nginx.conf
+  become: true
+  notify:
+      - reload nginx
+  when: deploy_backend
+
+- name: Ensure that the default site is disabled
+  file: path=/etc/nginx/sites-enabled/default state=absent
+  notify:
+      - reload nginx
+
+- name: Ensure snippets directory exists
+  file:
+      path: /etc/nginx/snippets
+      state: directory
+      follow: true
+  become: true

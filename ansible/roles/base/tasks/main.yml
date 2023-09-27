@@ -1,0 +1,42 @@
+---
+- include_tasks: create_swap_file.yml
+  when: create_swap_file
+  tags: swap
+
+- name: Install base packages
+  apt:
+    update_cache: "{{ update_apt_cache }}"
+    state: present
+    name:
+      - locales
+      - build-essential
+      - acl
+      - ntp
+      - htop
+      - git
+      - "{{ base_python_package }}-pip"
+      - "i{{ base_python_package }}"
+      - supervisor
+  tags:
+    - packages
+    - packages.security
+
+- name: Upgrade pip
+  pip: name=pip state=latest
+  tags:
+    - packages
+    - skip_ansible_lint
+
+- name: Create the application group
+  group: name=www-data system=yes state=present
+
+- name: Add the application user to the application group
+  user: name={{ ansible_user }} group=www-data state=present
+
+- name: Create project directory if it does not exist
+  ansible.builtin.file:
+    path: "{{ ansistrano_deploy_to }}"
+    state: directory
+    mode: "0755"
+    owner: "{{ ansible_user }}"
+    group: "www-data"

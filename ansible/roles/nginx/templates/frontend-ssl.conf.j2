@@ -1,0 +1,86 @@
+proxy_cache_path /var/cache/frontend levels=1:2 keys_zone=cache:25m max_size=1g inactive=60m use_temp_path=off;
+
+map $sent_http_content_type $expires {
+  "text/html" 1h;
+  "text/html; charset=utf-8" 1h;
+  default 7d;
+}
+
+upstream frontend {
+  zone upstreams 64K;
+  server {{ ansible_default_ipv4.address }}:3000;
+  keepalive 50;
+}
+
+server {
+  listen 80;
+  listen 443 ssl http2;
+  server_name {{ frontend_server_name }} default_server;
+
+  if ( $scheme = "http" ) {
+    return 301 https://$host$request_uri;
+  }
+
+  # SSL
+  ssl_certificate /etc/letsencrypt/live/{{ frontend_server_name }}/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/{{ frontend_server_name }}/privkey.pem;
+
+  # security headers
+  add_header X-XSS-Protection "1; mode=block" always;
+  add_header X-Content-Type-Options "nosniff" always;
+  add_header Referrer-Policy "no-referrer-when-downgrade" always;
+  add_header Content-Security-Policy "default-src 'self' http: https: ws: wss: data: blob: 'unsafe-inline'; frame-ancestors 'self';" always;
+  add_header Permissions-Policy "interest-cohort=()" always;
+  add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+  add_header X-Cache-Status $upstream_cache_status;
+
+  proxy_redirect off;
+  proxy_http_version 1.1;
+  proxy_set_header Host $host;
+  proxy_set_header X-Real-IP $remote_addr;
+  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  proxy_set_header X-Forwarded-Proto $scheme;
+  proxy_set_header "Connection" "";
+  # Proxy timeout
+  proxy_send_timeout 1m;
+  proxy_read_timeout 1m;
+  proxy_connect_timeout 1m;
+
+  location / {
+    expires $expires;
+
+    proxy_pass http://frontend/;
+
+    # Proxy cache
+    proxy_cache cache;
+    proxy_cache_revalidate on;
+    proxy_cache_use_stale error timeout http_500 http_502 http_503 http_504;
+    proxy_cache_background_update on;
+    proxy_cache_lock on;
+
+    proxy_cache_valid 200 302 60m;
+    proxy_cache_valid 404 1m;
+    # Bypass cache with purgecache=true query string and save new response to proxy cache
+    proxy_cache_bypass $arg_purgecache;
+
+    # Bypass cache with "x-purge-cache: true" request header and save new response to proxy cache
+    proxy_cache_bypass $http_x_purge_cache;
+
+    # Bypass cache with "purgecache=true" cookie and save new response to proxy cache
+    proxy_cache_bypass $cookie_purgecache;
+  }
+
+  access_log off;
+  error_log /var/log/nginx/{{ frontend_server_name }}-error.log error;
+
+  # ACME-challenge
+  location ^~ /.well-known/acme-challenge/ {
+    root /var/www/_letsencrypt;
+  }
+
+  location ~ /\.(?!well-known).* {
+    deny all;
+  }
+}
+

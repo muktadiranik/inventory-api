@@ -1,0 +1,18 @@
+---
+- hosts: prod
+  become: true
+  vars_files:
+    # - vars/secret.yml
+    - vars/main.yml
+
+  environment:
+    FNM_DIR: /home/{{ ansible_user }}/{{ fnm_root_suffix }}
+    PATH: /home/{{ ansible_user }}/{{ fnm_root_suffix }}/node-versions/{{ fnm_nodejs_versions|first }}/installation/bin:{{ ansible_env.PATH }}
+
+  roles:
+    - base
+    # - geerlingguy.certbot
+    - nginx
+    # - geerlingguy.postgresql
+    - { role: ansistrano.deploy, become: false }
+    - web

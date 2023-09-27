@@ -1,0 +1,41 @@
+/* .tab-content input, textarea {
+    background-color: #343a40 !important; 
+    color: white !important;
+    border: none !important;
+} */
+
+.select2-container--default .select2-selection--single .select2-selection__rendered{
+    margin: auto !important;
+}
+
+brand-link navbar-success:hover{
+    background-color: #00bc8c !important;
+}
+
+#id_tags {
+    display: block;
+    width: 100%;
+    padding: 10px;
+}
+
+#changelist-search .form-group {
+    margin: 10px !important;
+}
+
+.alert-success a{
+color: #ffffff !important;
+}
+#id_permissions_from, #id_user_permissions_from, #id_groups_from, #id_user_groups_from{
+    color: #000000 !important;
+}
+#id_user_permissions_input, #id_groups_input{
+    color: #000000 !important;
+    background-color: #ffffff !important;
+}
+#recent-actions-module > h3{
+    font-size: 20px !important;
+}
+
+.main-footer > .float-right{
+    display: none !important;
+}

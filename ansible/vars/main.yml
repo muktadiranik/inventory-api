@@ -1,0 +1,50 @@
+deploy_frontend: false
+deploy_backend: true
+
+application_name: inventory
+frontend_project_name: frontend
+backend_project_name: inventory
+db_name: inventory
+db_user: inventory
+db_password: inventory
+
+postgresql_databases:
+  - name: "{{ db_name }}"
+    # state: "absent"
+postgresql_users:
+  # - name: "{{ secret_db_user }}"
+  - name: "{{ db_user }}"
+    password: "{{ db_password }}"
+
+update_apt_cache: true
+
+frontend_server_name: inventory-api.devxhub.com
+backend_server_name: inventory-api.devxhub.com
+ansistrano_deploy_to: "/var/www/inventory"
+ansistrano_version_dir: "releases"
+ansistrano_current_dir: "current"
+ansistrano_current_via: "symlink"
+ansistrano_keep_releases: 1
+ansistrano_deploy_via: git
+ansistrano_git_repo: https://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@github.com/hudacse6/devxhub-inventory-api.git
+ansistrano_git_branch: dev
+
+# Certbot for SSL
+certbot_create_if_missing: true
+certbot_admin_email: eliyas@devxhub.com
+certbot_certs:
+  - domains:
+      - inventory-api.devxhub.com
+
+# Redis
+redis_port: 6379
+redis_bind_interface: 127.0.0.1
+redis_requirepass: "JE86vlSE4xLGIJNDGd66LoAvdfNzvJV7rzUvjik3"
+
+# Nodejs
+fnm_root_suffix: ".fnm"
+fnm_nodejs_versions:
+  - v16.18.0
+fnm_npm_global_packages:
+  - name: yarn
+  - name: pm2

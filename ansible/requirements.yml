@@ -1,0 +1,7 @@
+---
+- src: ansistrano.deploy
+- src: ansistrano.rollback
+- src: geerlingguy.postgresql
+- src: geerlingguy.certbot
+- src: geerlingguy.redis
+- src: hurricanehrndz.fnm
